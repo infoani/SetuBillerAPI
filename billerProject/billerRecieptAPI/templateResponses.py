@@ -66,3 +66,12 @@ billObjectDetailsTemplate = {
         }
     }
 }
+
+receiptGeneratedResponseTemplate = {
+    "data" : {
+        "billerBillID"             : None,
+        "platformBillID"           : None,
+        "platformTransactionRefID" : None,
+        "receipt" : None
+    }
+}

@@ -8,7 +8,7 @@ from .biller import Biller
 from .models import Customer
 from .utils import CustomerUtils, PaymentUtils, AuthorizationUtils, BillUtils
 from .responseObjects import ResponseObjects
-from .exceptions import ObjectNotPresentException
+from .exceptions import BillExactAmountMismatchException
 
 # Create your views here.
 class FetchCustomerBills(View):
@@ -52,6 +52,8 @@ class FetchReceipt(View):
 
         try:
             generatedReceipt = Biller.generateReceipt(paymentObject)
-        except ObjectNotPresentException:
-            return HttpResponseBadRequest(b'Incorrect bill details. Bill is not present in system')
-        return JsonResponse(paymentObject.uniquePaymentRefID, safe=False)
+        except BillExactAmountMismatchException as e:
+            return HttpResponseBadRequest(str(e))
+
+        receiptResponseObject = ResponseObjects.receiptGeneratedWithBillTemplate(generatedReceipt)
+        return JsonResponse(receiptResponseObject, safe=False)

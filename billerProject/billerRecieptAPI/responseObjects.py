@@ -43,3 +43,20 @@ class ResponseObjects:
         }
 
         return billDict
+
+    @staticmethod
+    def receiptGeneratedWithBillTemplate(receiptObject):
+        statusMessageTemplate["status"] = OverallStatus.SUCCESS.value
+        statusMessageTemplate["success"] = True
+
+        receiptGeneratedResponseTemplate["data"]["billerBillID"] = receiptObject.bill.billerBillID
+        receiptGeneratedResponseTemplate["data"]["platformBillID"] = receiptObject.payment.platformBillID
+        receiptGeneratedResponseTemplate["data"]["platformTransactionRefID"] = receiptObject.payment.platformTransactionRefID
+        receiptGeneratedResponseTemplate["data"]["receipt"] = {
+            "id": receiptObject.receiptId,
+            "date": receiptObject.generatedOn
+        }
+
+        receiptGeneratedResponse = dict(**statusMessageTemplate,
+                                            **receiptGeneratedResponseTemplate)
+        return receiptGeneratedResponse
