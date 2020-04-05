@@ -26,7 +26,8 @@ class Utils(ABC):
 
         return optional.Optional.of(objectOfModel)
 
-    def validateObjectInputReqeust(self, requestBody:str) -> typing.Optional[HttpResponse]:
+    @staticmethod
+    def validateObjectInputReqeust(requestBody:str) -> typing.Optional[HttpResponse]:
 
         if not requestBody: return HttpResponseBadRequest(b'No request body is provided')
         try:
@@ -89,9 +90,9 @@ class AuthorizationUtils:
 
     @staticmethod
     def validateRequestWithJWT(requestHeaders):
-        token = requestHeaders.get("Authorization")
+        token = requestHeaders.get("HTTP_X_AUTHORIZATION")
         if not token:
-            return HttpResponseUnauthorized(str(requestHeaders))
+            return HttpResponseUnauthorized(b'X-Authorization header is expected')
         
         credentialOptional = AuthorizationUtils._getJWTCredentials("setu")
         if credentialOptional.is_empty():

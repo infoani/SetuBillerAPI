@@ -5,32 +5,31 @@ from django.http import HttpResponseBadRequest, HttpResponseNotFound, JsonRespon
 
 from .biller import Biller
 from .models import Customer
-from .utils import CustomerUtils, PaymentUtils, AuthorizationUtils, BillUtils
+from .utils import CustomerUtils, PaymentUtils, AuthorizationUtils, BillUtils, Utils
 from .responseObjects import ResponseObjects
 from .exceptions import BillExactAmountMismatchException, BillFullyPaidAlreadyException
 from .restInputValidators import RequestReceiptSerializer, CustomerRequestSerializer
+from django.forms.models import model_to_dict
 
-# Create your views here.
 class FetchCustomerBills(View):
 
     def post(self, request):
 
-        requestHeaders = request.requestHeaders
-        return JsonResponse(str(requestHeaders))
-        customerIdentifiers = request.body.decode('utf-8')
+        requestHeaders = request.META
+        verifyRequestAuth = AuthorizationUtils.validateRequestWithJWT(requestHeaders)
+        if verifyRequestAuth: return verifyRequestAuth
 
-        customerUtils = CustomerUtils()
-        # verifyRequestAuth = AuthorizationUtils.validateRequestWithJWT(requestHeaders)
-        validateJsonInput = customerUtils.validateObjectInputReqeust(customerIdentifiers)
-    
-        # if verifyRequestAuth: return verifyRequestAuth
+        objectIdentifiers = request.body.decode('utf-8')
+        if not objectIdentifiers: return HttpResponseBadRequest(b'Reqeust Body is expected to fetch Customer Bills')
+
+        validateJsonInput = Utils.validateObjectInputReqeust(objectIdentifiers)
         if validateJsonInput: return validateJsonInput
 
-        customerSerializer = CustomerRequestSerializer(data=json.loads(customerIdentifiers))
+        customerSerializer = CustomerRequestSerializer(data=json.loads(objectIdentifiers))
         if customerSerializer.is_valid():
-            customerOptional = customerUtils.getObject(customerSerializer.validated_data)
+            customerOptional = CustomerUtils().getObject(customerSerializer.validated_data)
         else:
-            return HttpResponseBadRequest(customerSerializer.errors)
+            return HttpResponseBadRequest(json.dumps(customerSerializer.errors))
         
         if customerOptional.is_empty():
             return JsonResponse(status=HttpResponseNotFound.status_code, 
@@ -46,20 +45,20 @@ class FetchCustomerBills(View):
 class FetchReceipt(View):
     
     def post(self, request):
-        
-        requestHeaders = request.META
-        paymentIdentifiers = request.body.decode('utf-8')
 
-        paymentUtils = PaymentUtils()
+        requestHeaders = request.META
         verifyRequestAuth = AuthorizationUtils.validateRequestWithJWT(requestHeaders)
-        validateJsonInput = paymentUtils.validateObjectInputReqeust(paymentIdentifiers)
-    
         if verifyRequestAuth: return verifyRequestAuth
+
+        objectIdentifiers = request.body.decode('utf-8')
+        if not objectIdentifiers: return HttpResponseBadRequest(b'Reqeust Body is expected to generate receipt')
+
+        validateJsonInput = Utils.validateObjectInputReqeust(objectIdentifiers)
         if validateJsonInput: return validateJsonInput
 
-        paymentSerializer = RequestReceiptSerializer(data=json.loads(paymentIdentifiers))
+        paymentSerializer = RequestReceiptSerializer(data=json.loads(objectIdentifiers))
         if paymentSerializer.is_valid():
-            paymentObject = paymentUtils.createObject(paymentSerializer.validated_data)
+            paymentObject = PaymentUtils().createObject(paymentSerializer.validated_data)
         else:
             return HttpResponseBadRequest(json.dumps(paymentSerializer.errors))
 
@@ -70,3 +69,15 @@ class FetchReceipt(View):
 
         receiptResponseObject = ResponseObjects.receiptGeneratedWithBillTemplate(generatedReceipt)
         return JsonResponse(receiptResponseObject, safe=False)
+
+class FetchCustomerDetails(View):
+
+    def get(self, request):
+
+        requestHeaders = request.META
+        verifyRequestAuth = AuthorizationUtils.validateRequestWithJWT(requestHeaders)
+        if verifyRequestAuth: 
+            return verifyRequestAuth
+
+        allCustomerDictObjects = map(lambda c: model_to_dict(c, exclude=["customerPassword"]), Customer.objects.all())
+        return JsonResponse(list(allCustomerDictObjects), safe=False)
