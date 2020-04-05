@@ -52,8 +52,8 @@ class Bill(models.Model):
         default='EXACT'
     )
     customerAccount = models.ForeignKey(CustomerAccount, on_delete=models.DO_NOTHING, related_name='bills')
-    billAmount = models.IntegerField()
-    paidAmount = models.IntegerField(null=True)
+    billAmount = models.IntegerField(default=0)
+    paidAmount = models.IntegerField(default=0)
     billPaidFully = models.BooleanField(default=False)
 
     def __str__(self):
@@ -65,7 +65,8 @@ class Payment(models.Model):
     platformTransactionRefID = models.CharField(max_length=100)
     uniquePaymentRefID = models.CharField(primary_key=True, max_length=100)
     amountPaid = models.IntegerField(null=False)
-    billAmount = models.IntegerField()
+    billAmount = models.IntegerField(default=0)
+    receiptGenerated = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Payment(id:{self.uniquePaymentRefID})"

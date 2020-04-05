@@ -9,6 +9,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'billerProject.settings'
 django.setup()
 
 from billerRecieptAPI.models import Customer, CustomerAccount, Bill, Receipt
+from django.utils import timezone
 
 fake = Faker()
 fake.add_provider(bank)
@@ -31,9 +32,9 @@ for i in range(50):
         account.save()
 
         bill = Bill(billerBillID=fake.random_int(100000000000, 999999999999),
-                    generatedOn=fake.date_time_this_month(tzinfo=None),
-                    recurrence=random.choice(["ONE_TIME", "MONTHLY"]),
-                    amountExactness=random.choice(["EXACT", "INEXACT"]),
+                    generatedOn=fake.date_time_this_month(tzinfo=timezone.get_current_timezone()),
+                    recurrence=random.choice(["ONE_TIME",]),
+                    amountExactness=random.choice(["EXACT",]),
                     customerAccount=account,
                     billAmount=fake.random_int(10, 1000000))
 

@@ -18,7 +18,7 @@ class ResponseObjects:
         
         billListItems = tuple(map(ResponseObjects._includeBillDetailsInTemplate, billObjects))
         billStatusDetailsTemplate.get("billDetails").update({
-            "billFetchStatus" : BillFetchStatus.AVAILABLE.value,
+            "billFetchStatus" : BillFetchStatus.AVAILABLE.value if billListItems else BillFetchStatus.NO_OUTSTANDING.value,
             "bills" : billListItems
         })
         customerFoundWithBillResponse = dict(**statusMessageTemplate,
@@ -30,9 +30,9 @@ class ResponseObjects:
         customerAccount = billObject.customerAccount
         billAmount = billObject.billAmount
 
-        billDict = model_to_dict(billObject, exclude=["customerAccount", "billAmount"])
+        billDict = model_to_dict(billObject, exclude=["customerAccount", "billAmount", "paidAmount", "billPaidFully"])
         accountDict = model_to_dict(customerAccount, fields=["accountId"])
-        billDict.update(accountDict)
+        billDict.update({"customerAccount" : accountDict})
 
         # current template. Need to change if more action on aggregarte is required
         billDict.setdefault("aggregates", {})['total'] = {

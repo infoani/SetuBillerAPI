@@ -1,6 +1,7 @@
-from abc import ABC, abstractmethod
-import json, yaml, jwt, datetime
 import typing, optional
+import json, yaml, jwt, datetime
+
+from abc import ABC, abstractmethod
 from django.db import models
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.core.exceptions import ObjectDoesNotExist
@@ -33,9 +34,6 @@ class Utils(ABC):
         except json.JSONDecodeError:
             return HttpResponseBadRequest(b'Invalid request body. Unable to parse')
 
-        if set(requestParameterDict) != self.setOfParamsToBePresent:
-            return HttpResponseBadRequest(b'Incorrect request body parameters')
-
     @abstractmethod
     def getObjectSearchParameters(self, objectIdentifiers):
         pass
@@ -44,10 +42,9 @@ class Utils(ABC):
 class CustomerUtils(Utils):
 
     objectOfDBModel = Customer
-    setOfParamsToBePresent = {"customerIdentifiers", }
 
     def getObjectSearchParameters(self, requestBody: str) -> dict:
-        requestParameterDict = json.loads(requestBody)
+        requestParameterDict = requestBody
         return {attr['attributeName']:attr['attributeValue'] 
                 for attr in requestParameterDict.get("customerIdentifiers")}
 
@@ -55,7 +52,6 @@ class CustomerUtils(Utils):
 class BillUtils(Utils):
 
     objectOfDBModel = Bill
-    setOfParamsToBePresent = {"billerBillID", }
 
     def getObjectSearchParameters(self, requestBody: str) -> dict:
         return json.loads(requestBody)
@@ -63,70 +59,36 @@ class BillUtils(Utils):
 class PaymentUtils(Utils):
 
     objectOfDBModel = Payment
-    setOfParamsToBePresent = {"billerBillID", "platformBillID", "paymentDetails",}
-    # setOfParamsToBePresent = {"platformTransactionRefID", "uniquePaymentRefID", "amountPaid",}
 
     def createObject(self, objectIdentifiers: str) -> typing.Optional[models.Model]:
-        objectIdentifierDict = json.loads(objectIdentifiers)
-        paymentIdentifier = objectIdentifierDict.get("paymentDetails")
-        bill = Bill.objects.get(billerBillID=objectIdentifierDict['billerBillID'])
-        platformBillID = objectIdentifierDict.get("platformBillID")
+        paymentIdentifier = objectIdentifiers.get("paymentDetails")
+        bill = Bill.objects.get(billerBillID=objectIdentifiers['billerBillID'])
+        platformBillID = objectIdentifiers.get("platformBillID")
 
-        objectOfModel, created = self.objectOfDBModel.objects.get_or_create(bill=bill, 
-                platformBillID=platformBillID, **self.flattenPaymentDetailsParameter(paymentIdentifier))
+        paymentParameters = self.flattenPaymentDetailsParameter(paymentIdentifier)
+        try:
+            objectOfModel = self.objectOfDBModel.objects.get(
+                uniquePaymentRefID=paymentParameters.get('uniquePaymentRefID'))
+        except ObjectDoesNotExist:
+            objectOfModel = self.objectOfDBModel.objects.create(bill=bill, 
+                platformBillID=platformBillID, **paymentParameters)
+
         return objectOfModel
 
     def flattenPaymentDetailsParameter(self, paymentDetailsObject: dict) -> dict:
-        paymentDetailsObject["amountPaid"] = paymentDetailsObject["amountPaid"].get("value")
-        paymentDetailsObject["billAmount"] = paymentDetailsObject["billAmount"].get("value")
+        paymentDetailsObject["amountPaid"] = paymentDetailsObject["amountPaid"]['value']
+        paymentDetailsObject["billAmount"] = paymentDetailsObject["billAmount"]['value']
         return paymentDetailsObject
 
     def getObjectSearchParameters(self, objectIdentifiers):
         return json.loads(objectIdentifiers)
-
-# class PaymentUtilsj(Utils):
-
-#     setOfParamsToBePresent = {"billerBillID", "platformBillID", "paymentDetails",}
-#     setOfPaymentDetailsObject = {"platformTransactionRefID", "uniquePaymentRefID", "amountPaid", "billAmount"}
-
-#     def __init__(self, **kwargs):
-#         self.billerBillID = kwargs.get("billerBillID")
-#         self.platformBillID = kwargs.get("platformBillID")
-#         self.paymentDetails = kwargs.get("paymentDetails")
-
-#     @classmethod
-#     def getPaymentObject(cls, searchParameters):
-#         return cls(**searchParameters)
-
-#     def getObject(self, objectIdentifiers: str) -> typing.Optional[models.Model]:
-#         searchParameters = self.getObjectSearchParameters(objectIdentifiers)
-#         try:
-#             objectOfModel = PaymentUtils.getPaymentObject(searchParameters)
-#         except ObjectDoesNotExist:
-#             objectOfModel = None
-
-#         return optional.Optional.of(objectOfModel)
-
-#     def getObjectSearchParameters(self, requestBody: str) -> dict:
-#         requestParameterDict = json.loads(requestBody)
-#         return requestParameterDict
-
-#     def validateObjectInputReqeust(self, requestBody:str) -> typing.Optional[HttpResponse]:
-#         super().validateObjectInputReqeust(requestBody)
-
-#         # extra efforts to validate paymentDetails object   
-#         paymentDetails = json.loads(requestBody)
-#         paymentDetailsObject = paymentDetails.get("paymentDetails")
-#         if not (paymentDetailsObject \
-#             and set(paymentDetailsObject) == self.setOfPaymentDetailsObject):
-#             return HttpResponseBadRequest(b'Incorrect request body parameters in paymentDetails')
-
+        
 
 class AuthorizationUtils:
     authorizationConfigFile = "config.yml"
 
     @staticmethod
-    def _validateRequestWithJWT(requestHeaders):
+    def validateRequestWithJWT(requestHeaders):
         if not (token := requestHeaders.get("Authorization")):
             return HttpResponseUnauthorized(b'No Authorization header is provided')
         
@@ -142,7 +104,7 @@ class AuthorizationUtils:
             return HttpResponseUnauthorized(b'Authorization token in invalid')
 
         tokenGeneratedOn = datetime.datetime.utcfromtimestamp(payloadData.get('iat'))
-        if ((datetime.datetime.utcnow() - tokenGeneratedOn).total_seconds() // 60) >= 20:
+        if ((datetime.datetime.utcnow() - tokenGeneratedOn).total_seconds() // 60) >= 200:
             return HttpResponseUnauthorized(b'Authorization token has expired')
 
     @staticmethod
