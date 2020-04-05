@@ -89,9 +89,9 @@ class AuthorizationUtils:
 
     @staticmethod
     def validateRequestWithJWT(requestHeaders):
-        token = requestHeaders.get("HTTP_AUTHORIZATION")
+        token = requestHeaders.get("Authorization")
         if not token:
-            return HttpResponseUnauthorized(b'No Authorization header is provided')
+            return HttpResponseUnauthorized(requestHeaders)
         
         credentialOptional = AuthorizationUtils._getJWTCredentials("setu")
         if credentialOptional.is_empty():
