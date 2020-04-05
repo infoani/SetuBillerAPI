@@ -15,7 +15,8 @@ class FetchCustomerBills(View):
 
     def post(self, request):
 
-        requestHeaders = request.META
+        requestHeaders = request.requestHeaders
+        return JsonResponse(str(requestHeaders))
         customerIdentifiers = request.body.decode('utf-8')
 
         customerUtils = CustomerUtils()
