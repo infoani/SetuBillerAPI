@@ -1,3 +1,4 @@
 setu:
     aud: 79d338d8-7504-11ea-ab9f-a483e70125e7
     secretKey: e6ffdca7-1744-48c4-a71f-0edcc05839e6
+    keyTimeOut: 2

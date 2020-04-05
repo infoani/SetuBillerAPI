@@ -106,7 +106,7 @@ class AuthorizationUtils:
             return HttpResponseUnauthorized(b'Authorization token in invalid')
 
         tokenGeneratedOn = datetime.datetime.utcfromtimestamp(payloadData.get('iat'))
-        if ((datetime.datetime.utcnow() - tokenGeneratedOn).total_seconds() // 60) >= 200:
+        if ((datetime.datetime.utcnow() - tokenGeneratedOn).total_seconds() // 60) >= creds.get('keyTimeOut'):
             return HttpResponseUnauthorized(b'Authorization token has expired')
 
     @staticmethod
