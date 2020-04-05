@@ -19,10 +19,10 @@ class FetchCustomerBills(View):
         customerIdentifiers = request.body.decode('utf-8')
 
         customerUtils = CustomerUtils()
-        verifyRequestAuth = AuthorizationUtils.validateRequestWithJWT(requestHeaders)
+        # verifyRequestAuth = AuthorizationUtils.validateRequestWithJWT(requestHeaders)
         validateJsonInput = customerUtils.validateObjectInputReqeust(customerIdentifiers)
     
-        if verifyRequestAuth: return verifyRequestAuth
+        # if verifyRequestAuth: return verifyRequestAuth
         if validateJsonInput: return validateJsonInput
 
         customerSerializer = CustomerRequestSerializer(data=json.loads(customerIdentifiers))
