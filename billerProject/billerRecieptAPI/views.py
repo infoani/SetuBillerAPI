@@ -19,9 +19,11 @@ class FetchCustomerBills(View):
         customerIdentifiers = request.body.decode('utf-8')
 
         customerUtils = CustomerUtils()
-        if (verifyRequestAuth := AuthorizationUtils.validateRequestWithJWT(requestHeaders)) \
-            or (validateJsonInput := customerUtils.validateObjectInputReqeust(customerIdentifiers)):
-            return verifyRequestAuth if verifyRequestAuth else validateJsonInput
+        verifyRequestAuth = AuthorizationUtils.validateRequestWithJWT(requestHeaders)
+        validateJsonInput = customerUtils.validateObjectInputReqeust(customerIdentifiers)
+    
+        if verifyRequestAuth: return verifyRequestAuth
+        if validateJsonInput: return validateJsonInput
 
         customerSerializer = CustomerRequestSerializer(data=json.loads(customerIdentifiers))
         if customerSerializer.is_valid():
@@ -48,9 +50,11 @@ class FetchReceipt(View):
         paymentIdentifiers = request.body.decode('utf-8')
 
         paymentUtils = PaymentUtils()
-        if (verifyRequestAuth := AuthorizationUtils.validateRequestWithJWT(requestHeaders)) \
-            or (validateJsonInput := paymentUtils.validateObjectInputReqeust(paymentIdentifiers)):
-            return verifyRequestAuth if verifyRequestAuth else validateJsonInput
+        verifyRequestAuth = AuthorizationUtils.validateRequestWithJWT(requestHeaders)
+        validateJsonInput = paymentUtils.validateObjectInputReqeust(paymentIdentifiers)
+    
+        if verifyRequestAuth: return verifyRequestAuth
+        if validateJsonInput: return validateJsonInput
 
         paymentSerializer = RequestReceiptSerializer(data=json.loads(paymentIdentifiers))
         if paymentSerializer.is_valid():

@@ -25,7 +25,7 @@ SECRET_KEY = 'z4exty+x(mz0@w867dex%s@7el)ui##+y=*^huaav)+1d7rsd@'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['setuBiller.eba-zrcj9xr2.us-west-2.elasticbeanstalk.com']
+ALLOWED_HOSTS = ['setuBiller.eba-zrcj9xr2.us-west-2.elasticbeanstalk.com', '127.0.0.1']
 
 
 # Application definition
