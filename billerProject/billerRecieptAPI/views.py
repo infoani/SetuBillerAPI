@@ -15,7 +15,7 @@ class FetchCustomerBills(View):
 
     def post(self, request):
 
-        requestHeaders = request.headers
+        requestHeaders = request.META
         customerIdentifiers = request.body.decode('utf-8')
 
         customerUtils = CustomerUtils()
@@ -46,7 +46,7 @@ class FetchReceipt(View):
     
     def post(self, request):
         
-        requestHeaders = request.headers
+        requestHeaders = request.META
         paymentIdentifiers = request.body.decode('utf-8')
 
         paymentUtils = PaymentUtils()
