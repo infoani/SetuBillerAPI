@@ -10,7 +10,7 @@ class Customer(models.Model):
     mobileNumber = models.IntegerField(
         validators=[
             RegexValidator(
-                regex=r"(0/91)?[6-9][0-9]{9}",
+                regex=r"(0|91)?[5-9][0-9]{9}",
                 message=_("The phone number is not valid")
             ),
         ]

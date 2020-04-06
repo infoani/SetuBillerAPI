@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Customer
+import re
 
 # verify Customer Search input for fetchCustomerBills API
 class AttributeSerializer(serializers.Serializer):
@@ -12,6 +13,13 @@ class AttributeSerializer(serializers.Serializer):
             raise serializers.ValidationError(f"Choices for Customer Attribute names are {choices}")
         return attributeName
              
+    # def validate_attributeValue(self, attributeValue):
+    #     if self.get_initial() == "mobileNumber":
+    #         matchObject = re.match(r"^(0|91)?([5-9][0-9]{9})$", attributeValue)
+    #         if matchObject: return matchObject.group(2)
+    #         else: raise serializers.ValidationError("Only digits are expected for mobile number.")
+    #     return attributeValue
+            
 
 class CustomerRequestSerializer(serializers.Serializer):
     customerIdentifiers = serializers.ListField(child=AttributeSerializer())
@@ -19,7 +27,7 @@ class CustomerRequestSerializer(serializers.Serializer):
 
 # verify bill payment inputs for fetchReceipt API
 class ValueSerializer(serializers.Serializer):
-    value = serializers.IntegerField(required=True)
+    value = serializers.FloatField(required=True)
 
 class PaymentSerializer(serializers.Serializer):
     platformTransactionRefID = serializers.CharField(required=True)
