@@ -32,10 +32,12 @@ class Biller:
         billObject = paymentObject.bill
         if billObject.amountExactness == "EXACT":
             if billObject.billPaidFully == True:
-                raise BillFullyPaidAlreadyException("Bill has been paid in full already")
+                raise BillFullyPaidAlreadyException(
+                    "Payment received but Bill has been paid in full already. Extra amount will be refunded")
 
             if paymentObject.amountPaid != billObject.billAmount:
-                raise BillExactAmountMismatchException("Bill amount and paid amount dont match")
+                raise BillExactAmountMismatchException(
+                    "Payment received but Bill amount and paid amount dont match")
             else:
                 billObject.paidAmount = billObject.billAmount
                 billObject.billPaidFully = True

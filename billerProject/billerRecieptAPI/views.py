@@ -7,7 +7,7 @@ from .biller import Biller
 from .models import Customer
 from .utils import CustomerUtils, PaymentUtils, AuthorizationUtils, BillUtils, Utils
 from .responseObjects import ResponseObjects
-from .exceptions import BillExactAmountMismatchException, BillFullyPaidAlreadyException
+from .exceptions import BillExactAmountMismatchException, BillFullyPaidAlreadyException, PaymentRefIdAlreadyExists, BillWithBillerIdDoesNotExist
 from .restInputValidators import RequestReceiptSerializer, CustomerRequestSerializer
 from django.forms.models import model_to_dict
 
@@ -58,14 +58,16 @@ class FetchReceipt(View):
 
         paymentSerializer = RequestReceiptSerializer(data=json.loads(objectIdentifiers))
         if paymentSerializer.is_valid():
-            paymentObject = PaymentUtils().createObject(paymentSerializer.validated_data)
+            try: paymentObject = PaymentUtils().createObject(paymentSerializer.validated_data)
+            except (BillWithBillerIdDoesNotExist, PaymentRefIdAlreadyExists) as e: 
+                return HttpResponseBadRequest(e)        
         else:
             return HttpResponseBadRequest(json.dumps(paymentSerializer.errors))
 
         try:
             generatedReceipt = Biller.generateReceipt(paymentObject)
         except (BillExactAmountMismatchException, BillFullyPaidAlreadyException) as e:
-            return HttpResponseBadRequest(str(e))
+            return HttpResponse(e)
 
         receiptResponseObject = ResponseObjects.receiptGeneratedWithBillTemplate(generatedReceipt)
         return JsonResponse(receiptResponseObject, safe=False)
@@ -79,5 +81,5 @@ class FetchCustomerDetails(View):
         if verifyRequestAuth: 
             return verifyRequestAuth
 
-        allCustomerDictObjects = map(lambda c: model_to_dict(c, exclude=["customerPassword"]), Customer.objects.all())
+        allCustomerDictObjects = map(lambda c: model_to_dict(c, exclude=["password"]), Customer.objects.all())
         return JsonResponse(list(allCustomerDictObjects), safe=False)

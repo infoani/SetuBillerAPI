@@ -5,8 +5,10 @@ from abc import ABC, abstractmethod
 from django.db import models
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.utils import IntegrityError
 
 from .models import Customer, Bill, Payment
+from .exceptions import PaymentRefIdAlreadyExists, BillWithBillerIdDoesNotExist
 
 class HttpResponseUnauthorized(HttpResponse):
     status_code = 401
@@ -19,10 +21,8 @@ class Utils(ABC):
 
     def getObject(self, objectIdentifiers: str) -> typing.Optional[models.Model]:
         searchParameters = self.getObjectSearchParameters(objectIdentifiers)
-        try:
-            objectOfModel = self.objectOfDBModel.objects.get(**searchParameters)
-        except ObjectDoesNotExist:
-            objectOfModel = None
+        try: objectOfModel = self.objectOfDBModel.objects.get(**searchParameters)
+        except ObjectDoesNotExist: return optional.Optional.empty()
 
         return optional.Optional.of(objectOfModel)
 
@@ -55,7 +55,7 @@ class BillUtils(Utils):
     objectOfDBModel = Bill
 
     def getObjectSearchParameters(self, requestBody: str) -> dict:
-        return json.loads(requestBody)
+        return requestBody
 
 class PaymentUtils(Utils):
 
@@ -63,16 +63,17 @@ class PaymentUtils(Utils):
 
     def createObject(self, objectIdentifiers: str) -> typing.Optional[models.Model]:
         paymentIdentifier = objectIdentifiers.get("paymentDetails")
-        bill = Bill.objects.get(billerBillID=objectIdentifiers['billerBillID'])
+
+        bill = BillUtils().getObject({"billerBillID":objectIdentifiers['billerBillID']}).get_or_raise(BillWithBillerIdDoesNotExist("Invalid Bill Id provided"))
         platformBillID = objectIdentifiers.get("platformBillID")
 
         paymentParameters = self.flattenPaymentDetailsParameter(paymentIdentifier)
         try:
-            objectOfModel = self.objectOfDBModel.objects.get(
-                uniquePaymentRefID=paymentParameters.get('uniquePaymentRefID'))
-        except ObjectDoesNotExist:
             objectOfModel = self.objectOfDBModel.objects.create(bill=bill, 
-                platformBillID=platformBillID, **paymentParameters)
+                    platformBillID=platformBillID, **paymentParameters)
+        except IntegrityError:
+            raise PaymentRefIdAlreadyExists(
+                        f"payment ref {paymentParameters.get('uniquePaymentRefID')} already exists")
 
         return objectOfModel
 

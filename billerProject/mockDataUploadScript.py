@@ -16,17 +16,17 @@ fake.add_provider(bank)
 fake.add_provider(date_time)
 
 for i in range(50):
-    customer = Customer(customerName=fake.name(), 
-                        customerPhoneNumber=fake.random_int(5000000000, 9999999999), 
-                        customerEmail=fake.email(),
-                        customerUserName=fake.user_name(),
-                        customerPassword=fake.password(length=40, special_chars=False, upper_case=False))
+    customer = Customer(name=fake.name(), 
+                        mobileNumber=fake.random_int(5000000000, 9999999999), 
+                        email=fake.email(),
+                        userName=fake.user_name(),
+                        password=fake.password(length=40, special_chars=False, upper_case=False))
 
     customer.save()
     
     for i in range(5):
         account = CustomerAccount(customer=customer,
-                                accountId=fake.bban(),
+                                id=fake.bban(),
                                 accountDesc=fake.text())
 
         account.save()

@@ -14,15 +14,16 @@ class ResponseObjects:
     def customerFoundWithBillObjects(customerObj, billObjects):
         statusMessageTemplate["status"] = OverallStatus.SUCCESS.value
         statusMessageTemplate["success"] = True
-        customerDataInBillTemplate.get("data").get("customer")["name"] = customerObj.customerName
+        customerDataInBillTemplate.get("data").get("customer")["name"] = customerObj.name
         
         billListItems = tuple(map(ResponseObjects._includeBillDetailsInTemplate, billObjects))
         billStatusDetailsTemplate.get("billDetails").update({
             "billFetchStatus" : BillFetchStatus.AVAILABLE.value if billListItems else BillFetchStatus.NO_OUTSTANDING.value,
             "bills" : billListItems
         })
+        customerDataInBillTemplate.get("data").update(billStatusDetailsTemplate)
         customerFoundWithBillResponse = dict(**statusMessageTemplate,
-                                            **customerDataInBillTemplate, **billStatusDetailsTemplate)
+                                            **customerDataInBillTemplate,)
         return customerFoundWithBillResponse
 
     @staticmethod
@@ -31,7 +32,7 @@ class ResponseObjects:
         billAmount = billObject.billAmount
 
         billDict = model_to_dict(billObject, exclude=["customerAccount", "billAmount", "paidAmount", "billPaidFully"])
-        accountDict = model_to_dict(customerAccount, fields=["accountId"])
+        accountDict = model_to_dict(customerAccount, fields=["id"])
         billDict.update({"customerAccount" : accountDict})
 
         # current template. Need to change if more action on aggregarte is required
@@ -49,12 +50,12 @@ class ResponseObjects:
         statusMessageTemplate["status"] = OverallStatus.SUCCESS.value
         statusMessageTemplate["success"] = True
 
-        receiptGeneratedResponseTemplate["data"]["billerBillID"] = receiptObject.bill.billerBillID
+        receiptGeneratedResponseTemplate["data"]["billerBillID"] = str(receiptObject.bill.billerBillID)
         receiptGeneratedResponseTemplate["data"]["platformBillID"] = receiptObject.payment.platformBillID
         receiptGeneratedResponseTemplate["data"]["platformTransactionRefID"] = receiptObject.payment.platformTransactionRefID
         receiptGeneratedResponseTemplate["data"]["receipt"] = {
             "id": receiptObject.receiptId,
-            "date": receiptObject.generatedOn
+            "date": receiptObject.generatedOn.strftime('%Y-%m-%dT%H:%M:%SZ')
         }
 
         receiptGeneratedResponse = dict(**statusMessageTemplate,

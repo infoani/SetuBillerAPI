@@ -6,8 +6,8 @@ from django.utils import timezone
 
 # Create your models here.
 class Customer(models.Model):
-    name = models.CharField(max_length=50)
-    mobileNumber = models.IntegerField(
+    customerName = models.CharField(max_length=50)
+    customerPhoneNumber = models.IntegerField(
         validators=[
             RegexValidator(
                 regex=r"(0/91)?[6-9][0-9]{9}",
@@ -15,12 +15,12 @@ class Customer(models.Model):
             ),
         ]
     )
-    email = models.CharField(max_length=150)
-    userName = models.CharField(max_length=100, primary_key=True, blank=False, null=False)
-    password = models.CharField(max_length=100, blank=False, null=False)
+    customerEmail = models.CharField(max_length=150)
+    customerUserName = models.CharField(max_length=100, primary_key=True, blank=False, null=False)
+    customerPassword = models.CharField(max_length=100, blank=False, null=False)
 
     def __str__(self):
-        return f"Customer(username:{self.name}, mobile:{self.mobileNumber})"
+        return f"Customer(username:{self.customerUserName}, mobile:{self.customerPhoneNumber})"
 
 class CustomerAccount(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='accounts')
