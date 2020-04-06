@@ -8,17 +8,19 @@ class AttributeSerializer(serializers.Serializer):
     attributeValue = serializers.CharField(required=True)
 
     def validate_attributeName(self, attributeName):
+        self._hasMobile = False
         choices = [f.name for f in Customer._meta.get_fields() if f.name not in ['accounts', 'password']]
         if attributeName not in choices:
-            raise serializers.ValidationError(f"Choices for Customer Attribute names are {choices}")
+            raise serializers.ValidationError(f"Invalid attributeName <{attributeName}>. Choices are {choices}")
+        if attributeName == "mobileNumber": self._hasMobile = True
         return attributeName
              
-    # def validate_attributeValue(self, attributeValue):
-    #     if self.get_initial() == "mobileNumber":
-    #         matchObject = re.match(r"^(0|91)?([5-9][0-9]{9})$", attributeValue)
-    #         if matchObject: return matchObject.group(2)
-    #         else: raise serializers.ValidationError("Only digits are expected for mobile number.")
-    #     return attributeValue
+    def validate_attributeValue(self, attributeValue):
+        if self._hasMobile:
+            matchObject = re.match(r"^\+?(0|91)?([5-9][0-9]{9})$", attributeValue)
+            if matchObject: return matchObject.group(2)
+            else: raise serializers.ValidationError("Invalid <mobileNumber>. Only numeric values upto 10 digits, starting [5-9] are accepted. Optional country code +91/91/0 is accepted")
+        return attributeValue
             
 
 class CustomerRequestSerializer(serializers.Serializer):
