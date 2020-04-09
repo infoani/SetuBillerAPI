@@ -28,7 +28,7 @@ class CustomerAccount(models.Model):
     accountDesc = models.CharField(max_length=250)
 
     def __str__(self):
-        return f"Account(id:{self.accountId})"
+        return f"Account(id:{self.id})"
 
 class Bill(models.Model):
     billerBillID = models.BigIntegerField(primary_key=True)
